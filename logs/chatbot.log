@@ -1,0 +1,27 @@
+2025-05-31 10:36:44 - New user registered: Iflixin (supreme6tech@gmail.com)
+2025-05-31 10:40:24 - Failed to update last login for user ID: 2
+2025-05-31 10:40:24 - User logged in: Iflixin
+2025-05-31 10:52:08 - Failed to update last login for user ID: 4
+2025-05-31 10:52:08 - User logged in: admin
+2025-05-31 10:53:50 - Failed to update last login for user ID: 2
+2025-05-31 10:53:50 - User logged in: admin
+2025-05-31 10:54:11 - Failed to update last login for user ID: 2
+2025-05-31 10:54:11 - User logged in: admin
+2025-05-31 10:54:57 - New user registered: Anam (israelizoboh@gmail.com)
+2025-05-31 10:55:05 - Failed to update last login for user ID: 5
+2025-05-31 10:55:05 - User logged in: Anam
+2025-05-31 12:32:58 - Failed to update last login for user ID: 2
+2025-05-31 12:32:58 - User logged in: admin
+2025-05-31 12:40:22 - Error updating setting site_name: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'site_name' for key 'setting_key'
+2025-05-31 12:40:30 - Error updating setting site_name: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'site_name' for key 'setting_key'
+2025-05-31 12:40:42 - Error updating setting bot_name: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'bot_name' for key 'setting_key'
+2025-05-31 12:42:59 - Error updating setting bot_name: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'bot_name' for key 'setting_key'
+2025-05-31 12:50:13 - Error updating setting site_name: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'site_name' for key 'setting_key'
+2025-05-31 13:22:46 - User logged out: admin
+2025-05-31 13:23:27 - Failed to update last login for user ID: 2
+2025-05-31 13:23:27 - User logged in: adminy
+2025-05-31 13:23:55 - Error updating setting site_name: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'site_name' for key 'setting_key'
+2025-05-31 13:26:16 - Error updating setting site_name: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'site_name' for key 'setting_key'
+2025-05-31 13:28:30 - Error updating setting site_name: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'site_name' for key 'setting_key'
+2025-05-31 15:15:23 - Error updating setting site_name: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'site_name' for key 'setting_key'
+2025-05-31 15:15:23 - Error updating setting gemini_api_key: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'gemini_api_key' for key 'setting_key'
