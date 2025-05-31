@@ -1,4 +1,7 @@
 <?php
+if (!defined('GEMINI_API_ENDPOINT')) {
+    define('GEMINI_API_ENDPOINT', 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent');
+}
 require_once __DIR__ . '/db_connect.php';
 
 // Constants - Check if already defined to prevent redeclaration
@@ -7,7 +10,8 @@ if (!defined('CSRF_TOKEN_NAME')) {
 }
 
 if (!defined('GEMINI_API_ENDPOINT')) {
-    define('GEMINI_API_ENDPOINT', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$gemini_api_key}');
+    // Change this line in functions.php
+    define('GEMINI_API_ENDPOINT', 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent');
 }
 
 // Initialize session if not started
@@ -105,17 +109,77 @@ function getUserByUsername($username) {
 function getSetting($key) {
     global $db;
     try {
+        // First check if the settings table exists
+        $db->query("SHOW TABLES LIKE 'settings'");
+        $tableExists = $db->single();
+        
+        if (!$tableExists) {
+            // Table doesn't exist, create it
+            $db->query("
+                CREATE TABLE IF NOT EXISTS settings (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    setting_key VARCHAR(50) NOT NULL UNIQUE,
+                    setting_value TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            ");
+            $db->execute();
+            
+            // Insert default settings
+            $defaults = [
+                'site_name' => 'ODFEL ChatBot',
+                'bot_name' => 'ODFEL Assistant',
+                'max_message_length' => '500',
+                'gemini_api_key' => 'AIzaSyBu8WkfAboPIDMkVMMwixahwaZzQxSEUBw'
+            ];
+            
+            foreach ($defaults as $default_key => $default_value) {
+                $db->query("INSERT INTO settings (setting_key, setting_value) VALUES (:key, :value)");
+                $db->bind(':key', $default_key);
+                $db->bind(':value', $default_value);
+                $db->execute();
+            }
+            
+            // Return the requested default value
+            return $defaults[$key] ?? null;
+        }
+        
+        // Table exists, get the setting
         $db->query("SELECT setting_value FROM settings WHERE setting_key = :key");
         $db->bind(':key', $key);
         $result = $db->single();
-        return $result ? $result['setting_value'] : null;
-    } catch (Exception $e) {
-        // If settings table doesn't exist, return defaults
+        
+        if ($result && isset($result['setting_value'])) {
+            return $result['setting_value'];
+        }
+        
+        // Setting doesn't exist, return default
         $defaults = [
             'site_name' => 'ODFEL ChatBot',
             'bot_name' => 'ODFEL Assistant',
             'max_message_length' => '500',
-            'gemini_api_key' => 'AIzaSyBu8WkfAboPIDMkVMMwixahwaZzQxSEUBw',
+            'gemini_api_key' => 'AIzaSyBu8WkfAboPIDMkVMMwixahwaZzQxSEUBw'
+        ];
+        
+        // If it's a key we know about, create it in the database
+        if (isset($defaults[$key])) {
+            $db->query("INSERT INTO settings (setting_key, setting_value) VALUES (:key, :value)");
+            $db->bind(':key', $key);
+            $db->bind(':value', $defaults[$key]);
+            $db->execute();
+        }
+        
+        return $defaults[$key] ?? null;
+        
+    } catch (Exception $e) {
+        logActivity('Error in getSetting: ' . $e->getMessage());
+        // If anything fails, return defaults
+        $defaults = [
+            'site_name' => 'ODFEL ChatBot',
+            'bot_name' => 'ODFEL Assistant',
+            'max_message_length' => '500',
+            'gemini_api_key' => 'AIzaSyBu8WkfAboPIDMkVMMwixahwaZzQxSEUBw'
         ];
         return $defaults[$key] ?? null;
     }

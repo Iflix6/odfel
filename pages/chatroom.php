@@ -771,7 +771,7 @@ function sendBotMessage() {
     formData.append('message', message);
     formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
     
-    fetch('../chatbot/bot.php', {
+    fetch('../chatbot/bot_process.php', {
         method: 'POST',
         body: formData
     })

@@ -592,7 +592,7 @@ function sendTestMessage() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
     
     // Send to bot
-    fetch('../chatbot/bot.php', {
+    fetch('../chatbot/bot_process.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
