@@ -154,6 +154,21 @@ include '../includes/header.php';
 </div>
 
 <style>
+.loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 .chat-container {
     display: flex;
     flex-direction: column;
@@ -351,6 +366,15 @@ include '../includes/header.php';
     animation-delay: 0.4s;
 }
 
+@keyframes typing {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-10px);
+    }
+}
+
 .chat-input-container {
     padding: 20px;
     background: white;
@@ -502,15 +526,6 @@ include '../includes/header.php';
     }
 }
 
-@keyframes typing {
-    0%, 60%, 100% {
-        transform: translateY(0);
-    }
-    30% {
-        transform: translateY(-10px);
-    }
-}
-
 @media (max-width: 768px) {
     .chat-container {
         height: calc(100vh - 60px);
@@ -547,15 +562,16 @@ let typingTimer;
 
 // Initialize chat
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Chat initialized');
     loadMessages();
     setupMessageForm();
     setupBotModal();
     setupCharCounter();
     
-    // Auto-refresh messages
-    setInterval(loadMessages, 2000);
+    // Auto-refresh messages every 3 seconds
+    setInterval(loadMessages, 3000);
     
-    // Update online count
+    // Update online count every 30 seconds
     setInterval(updateOnlineCount, 30000);
     updateOnlineCount();
 });
@@ -564,11 +580,19 @@ function loadMessages() {
     if (isLoadingMessages) return;
     
     isLoadingMessages = true;
+    console.log('Loading messages, last ID:', lastMessageId);
     
     fetch('get_messages.php?last_id=' + lastMessageId)
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.success && data.messages.length > 0) {
+            console.log('Messages data:', data);
+            if (data.success && data.messages && data.messages.length > 0) {
                 const messagesContainer = document.getElementById('chat-messages');
                 const loadingElement = messagesContainer.querySelector('.loading-messages');
                 
@@ -578,14 +602,26 @@ function loadMessages() {
                 
                 data.messages.forEach(message => {
                     appendMessage(message);
-                    lastMessageId = Math.max(lastMessageId, message.id);
+                    lastMessageId = Math.max(lastMessageId, parseInt(message.id));
                 });
                 
                 scrollToBottom();
+            } else if (data.success && lastMessageId === 0) {
+                // No messages yet, remove loading indicator
+                const messagesContainer = document.getElementById('chat-messages');
+                const loadingElement = messagesContainer.querySelector('.loading-messages');
+                if (loadingElement) {
+                    loadingElement.innerHTML = '<p>No messages yet. Be the first to start the conversation!</p>';
+                }
             }
         })
         .catch(error => {
             console.error('Error loading messages:', error);
+            const messagesContainer = document.getElementById('chat-messages');
+            const loadingElement = messagesContainer.querySelector('.loading-messages');
+            if (loadingElement) {
+                loadingElement.innerHTML = '<p style="color: red;">Error loading messages. Please refresh the page.</p>';
+            }
         })
         .finally(() => {
             isLoadingMessages = false;
@@ -602,21 +638,23 @@ function createMessageElement(message) {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message';
     
+    // Check if this is the current user's message
     if (message.user_id == <?php echo $_SESSION['user_id']; ?>) {
         messageDiv.classList.add('own');
     }
     
-    if (message.is_bot) {
+    if (message.is_bot == 1) {
         messageDiv.classList.add('bot');
     }
     
     const avatar = document.createElement('div');
     avatar.className = 'message-avatar';
     
-    if (message.is_bot) {
+    if (message.is_bot == 1) {
         avatar.innerHTML = '<i class="fas fa-robot"></i>';
     } else {
-        avatar.textContent = message.username.charAt(0).toUpperCase();
+        const firstLetter = message.username ? message.username.charAt(0).toUpperCase() : 'U';
+        avatar.textContent = firstLetter;
     }
     
     const content = document.createElement('div');
@@ -627,7 +665,7 @@ function createMessageElement(message) {
     
     const username = document.createElement('span');
     username.className = 'username';
-    username.textContent = message.is_bot ? 'ODFEL Assistant' : message.username;
+    username.textContent = message.is_bot == 1 ? 'ODFEL Assistant' : (message.username || 'Unknown User');
     
     const timestamp = document.createElement('span');
     timestamp.className = 'timestamp';
@@ -685,10 +723,15 @@ function sendMessage() {
     const input = document.getElementById('message-input');
     const message = input.value.trim();
     
-    if (!message) return;
+    if (!message) {
+        alert('Please enter a message');
+        return;
+    }
     
     const sendBtn = document.getElementById('send-btn');
     sendBtn.disabled = true;
+    
+    console.log('Sending message:', message);
     
     const formData = new FormData();
     formData.append('message', message);
@@ -698,19 +741,27 @@ function sendMessage() {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Send response status:', response.status);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Send response data:', data);
         if (data.success) {
             input.value = '';
             updateCharCount();
-            loadMessages();
+            // Load messages immediately after sending
+            setTimeout(loadMessages, 500);
         } else {
             alert('Failed to send message: ' + (data.message || 'Unknown error'));
         }
     })
     .catch(error => {
         console.error('Error sending message:', error);
-        alert('Failed to send message. Please try again.');
+        alert('Failed to send message. Please check your connection and try again.');
     })
     .finally(() => {
         sendBtn.disabled = false;
@@ -769,9 +820,9 @@ function sendBotMessage() {
     // Send to bot
     const formData = new FormData();
     formData.append('message', message);
-    formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
+    formData.append('ajax_request', '1');
     
-    fetch('../chatbot/bot_process.php', {
+    fetch('../chatbot.php', {
         method: 'POST',
         body: formData
     })
@@ -785,6 +836,7 @@ function sendBotMessage() {
         }
     })
     .catch(error => {
+        console.error('Bot request error:', error);
         loadingDiv.remove();
         addBotMessage('Sorry, I\'m having trouble connecting. Please try again later.', true);
     });
@@ -821,18 +873,21 @@ function setupCharCounter() {
     const counter = document.getElementById('char-count');
     
     input.addEventListener('input', updateCharCount);
+}
+
+function updateCharCount() {
+    const input = document.getElementById('message-input');
+    const counter = document.getElementById('char-count');
+    const count = input.value.length;
     
-    function updateCharCount() {
-        const count = input.value.length;
-        counter.textContent = count;
-        
-        if (count > 450) {
-            counter.style.color = '#dc3545';
-        } else if (count > 400) {
-            counter.style.color = '#ffc107';
-        } else {
-            counter.style.color = '#666';
-        }
+    counter.textContent = count;
+    
+    if (count > 450) {
+        counter.style.color = '#dc3545';
+    } else if (count > 400) {
+        counter.style.color = '#ffc107';
+    } else {
+        counter.style.color = '#666';
     }
 }
 
